@@ -68,7 +68,7 @@ tests:
 	$(MAKE) --silent run_tests
 	@printf "Tests: DONE.\n"
 	$(MAKE) --silent sumup_tests
-	$(MAKE) --silent status_tests
+	$(MAKE) --silent tests_status
 
 # Params check
 .PHONY: tests_params_check
@@ -99,15 +99,15 @@ run_tests:
 sumup_tests:
 	@echo "Tests summary..."
 	@for act in $(ACTUALS) ; do \
-		$(MAKE) --silent compare \
+		$(MAKE) --silent compare_test \
 			act="$$act" \
 			out="$${act/$(TACT)/$(TOUT)}" ;\
 	done
 	@echo
 
 # Return tests status code
-.PHONY: status_tests
-status_tests:
+.PHONY: tests_status
+tests_status:
 	@echo "Tests: exiting with tests status..."
 	@for act in $(ACTUALS) ; do \
 		if [ -a $$act.failed ] ; then exit 2 ; fi ; \
@@ -116,20 +116,20 @@ status_tests:
 # Test exec with input and compare actuals
 .PHONY: %$(TACT)
 %$(TACT): %$(TIN) %$(TOUT)
-	$(MAKE) --silent test \
+	$(MAKE) --silent run_test \
 		params="$(subst [INPUT_FILE], $*$(TIN), $(subst [FILE_STEM], $*, $(TPARAMS)))"\
 		act=$@
-	$(MAKE) --silent compare act="$@" out="$(word 2, $^)" verbose=true
+	$(MAKE) --silent compare_test act="$@" out="$(word 2, $^)" verbose=true
 
 # Test exec with params and create actuals
 #
 # Parameters:
-#   params      executable parameters for test
-#   act			actual output filename 
-#   verbose     flag: print test descrption
-#   
-.PHONY: test
-test:
+#   params      executable parameters for run_test
+#   act			actual output filename
+#   verbose     flag: print run_test descrption
+#
+.PHONY: run_test
+run_test:
 	@if [ -n $(verbose) ] ; then \
 		printf "Test: $(TEXEC) $(params)"; \
 	fi;
@@ -142,8 +142,8 @@ test:
 #                   if ommited, status will have format: . or x respectively
 #   silent          flag: do not print any output
 #   fail_details    flag: print FAILED tests details
-.PHONY: compare
-compare:
+.PHONY: compare_test
+compare_test:
 	@if [ "$$($(DIFF) $(act) $(out))" == "" ] ; then\
 		if [ $(verbose) ] ; then \
 			printf " ...\e[0;32mPASSED\e[0m.\n"; \
